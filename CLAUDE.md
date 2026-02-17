@@ -1,108 +1,77 @@
-# CLAUDE.md - AI Assistant Guide for This Repository
+# CLAUDE.md - AI Assistant Guide
 
 ## Project Overview
 
-This is a **Python-based energy market data analysis** project focused on fetching and analyzing electricity market data from **EPIAS (Energy Exchange Istanbul)** Transparency Platform. The project uses the `eptr2` library to access Turkey's electricity market data, including PTF (Piyasa Takas Fiyati / Market Clearing Price) from the day-ahead market.
+**PTF (Market Clearing Price) Analysis & Forecasting** for KocSistem Renewable Energy Solutions internship (IE400). Fetches Turkey's electricity day-ahead market data from EPIAS, performs duck curve analysis, and builds Prophet time-series forecasting models.
 
 ## Repository Structure
 
 ```
 internship/
-├── CLAUDE.md              # This file - AI assistant guide
+├── CLAUDE.md              # AI assistant guide
 ├── README.md              # Project description
-├── .gitignore             # Python-specific ignore rules
+├── .gitignore             # Python gitignore + *.csv
 ├── requirements.txt       # Python dependencies
-├── ptf_fetcher.py         # Main script: fetches PTF data from EPIAS
-└── ptf_multi_year.csv     # Generated output (not committed, gitignored)
+├── ptf_fetcher.py         # Main script: fetch, analyze, forecast
+└── (generated outputs)    # CSV + PNG files (gitignored)
 ```
 
 ## Tech Stack
 
 - **Language:** Python 3.9+
-- **Key Library:** [eptr2](https://github.com/Tideseed/eptr2) - EPIAS Transparency Platform v2.0 API wrapper
-- **Data Processing:** pandas, matplotlib
+- **Data Source:** [eptr2](https://github.com/Tideseed/eptr2) - EPIAS Transparency Platform v2.0 API
+- **Analysis:** pandas, numpy, matplotlib
+- **Forecasting:** Prophet (Facebook), scikit-learn
 - **Package Manager:** pip
 
-## Setup & Installation
+## Setup
 
 ```bash
-# Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# .venv\Scripts\activate   # Windows
-
-# Install dependencies
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Credentials / Authentication
-
-**IMPORTANT:** This project uses interactive credential input (via `input()` / `getpass`). Users are prompted for their EPIAS username and password at runtime. Credentials are **never** stored in files, environment variables, or committed to the repository.
-
-Users must register at [EPIAS Transparency Platform](https://seffaflik.epias.com.tr/) to get credentials.
-
-## Running the Project
+## Running
 
 ```bash
 python ptf_fetcher.py
 ```
 
-The script will:
-1. Prompt for EPIAS username and password
-2. Fetch PTF (Market Clearing Price) data year-by-year from EPIAS
-3. Save combined data to `ptf_multi_year.csv`
-4. Display basic statistics and data summary
+The script prompts for EPIAS credentials interactively (never stored). It then:
+1. Fetches PTF data year-by-year (2021-2026) from EPIAS
+2. Generates duck curve visualizations (yearly, seasonal, weekday/weekend)
+3. Computes arbitrage spread analysis
+4. Prints yearly statistics table
+5. Trains Prophet model (80/20 split) and reports MAE/RMSE/MAPE
+6. Generates 30-day forecast
+
+## Generated Output Files
+
+| File | Description |
+|---|---|
+| `ptf_2021_2026.csv` | Raw hourly PTF data |
+| `duck_curve_by_year.png` | Yearly duck curve comparison |
+| `duck_curve_seasonal.png` | Seasonal duck curve (2025) |
+| `duck_curve_weekday_weekend.png` | Weekday vs weekend pattern |
+| `ptf_monthly_heatmap.png` | Monthly average PTF heatmap |
+| `prophet_components.png` | Prophet trend + seasonality decomposition |
+| `prophet_actual_vs_predicted.png` | Forecast accuracy (last 14 days) |
+| `prophet_30day_forecast.png` | 30-day future forecast |
 
 ## Key Conventions
 
-### Code Style
-- Python scripts use standard PEP 8 conventions
-- Turkish comments are used alongside English function/variable names
-- Data column names may be in Turkish (from EPIAS API responses)
+- **Credentials:** Interactive input only (`input()` + `getpass`). Never env vars, never `.env` files.
+- **API endpoint:** Use `eptr.call("mcp", ...)` for PTF data. `"ptf"` is an alias for `"mcp"`.
+- **Code style:** PEP 8. Turkish user-facing output, English code/variable names.
+- **Plots:** Consistent theme via `setup_plot_style()`. All saved as PNG, then `plt.close()`.
+- **Git:** Never commit CSVs, PNGs, or credentials. Main branch: `master`.
 
-### Data Handling
-- Date ranges are fetched year-by-year to avoid API timeouts
-- The `eptr2` library returns pandas DataFrames
-- Output CSVs are generated in the project root directory
-
-### Security
-- **Never** commit credentials or `.env` files
-- **Never** hardcode usernames or passwords
-- Always use interactive input (`getpass`) for sensitive data
-- The `.gitignore` already excludes `.env`, `.envrc`, and common secret files
-
-### Dependencies
-- All dependencies are listed in `requirements.txt`
-- Use `pip install -r requirements.txt` to install
-- The `eptr2[allextras]` package includes pandas and extra utilities
-
-## eptr2 API Quick Reference
+## eptr2 Quick Reference
 
 ```python
 from eptr2 import EPTR2
-
-# Initialize with credentials
-eptr = EPTR2(username="user@example.com", password="password")
-
-# Fetch Market Clearing Price (PTF)
+eptr = EPTR2(username="email", password="pass")
 df = eptr.call("mcp", start_date="2024-01-01", end_date="2024-12-31")
-# Alias: eptr.call("ptf", ...)
-
-# List all available API calls (213+ endpoints)
-eptr.get_available_calls()
-eptr.get_available_calls(include_aliases=True)
+eptr.get_available_calls(include_aliases=True)  # 213+ endpoints
 ```
-
-## Git Workflow
-
-- **Main branch:** `master`
-- Feature branches use the `claude/` prefix
-- Commit messages should be clear and descriptive
-- Do not commit generated data files (CSVs) or credentials
-
-## Common Issues
-
-- **eptr2 not installed:** Run `pip install "eptr2[allextras]"`
-- **Authentication errors:** Verify EPIAS credentials at https://seffaflik.epias.com.tr/
-- **No data returned:** Check date ranges and API endpoint names. Use `eptr.get_available_calls()` to verify available endpoints
-- **API rate limiting:** The eptr2 library supports TGT recycling to minimize authentication calls

@@ -1,3 +1,6 @@
 eptr2[allextras]
 pandas
+numpy
 matplotlib
+prophet
+scikit-learn
