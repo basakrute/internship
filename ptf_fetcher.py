@@ -81,23 +81,15 @@ def fetch_ptf_by_year(eptr, start_year, end_year):
 
         print(f"\n{year} verisi cekiliyor: {start_date} -> {end_date}...")
 
-        # Farkli endpoint isimlerini dene
-        methods = ["mcp", "ptf", "mcp-day-ahead", "day-ahead-mcp"]
-
-        fetched = False
-        for method in methods:
-            try:
-                df = eptr.call(method, start_date=start_date, end_date=end_date)
-                if df is not None and len(df) > 0:
-                    all_data.append(df)
-                    print(f"  {len(df)} satir cekildi (method: {method})")
-                    fetched = True
-                    break
-            except Exception:
-                continue
-
-        if not fetched:
-            print(f"  {year} icin veri cekilemedi!")
+        try:
+            df = eptr.call("mcp", start_date=start_date, end_date=end_date)
+            if df is not None and len(df) > 0:
+                all_data.append(df)
+                print(f"  {len(df)} satir cekildi")
+            else:
+                print(f"  {year} icin veri bos geldi!")
+        except Exception as e:
+            print(f"  {year} icin hata: {e}")
 
     if not all_data:
         print("\nHic veri cekilemedi!")
